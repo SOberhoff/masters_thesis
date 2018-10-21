@@ -1,0 +1,395 @@
+\documentclass{beamer}
+ 
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{wasysym}
+\usepackage{mathtools}
+\usepackage{pgfplots}
+\usepackage{xcolor}
+\usepackage{tikzscale}
+\usepackage{listings}
+\usepackage{setspace}
+
+\newcommand{\pr}[2]{\underset{#1}{\mathbb{P}}\left(#2\right)}
+\newcommand{\ev}[2]{\underset{#1}{\mathbb{E}}\left[#2\right]}
+
+\newtheorem{claim}{Claim}
+
+\usetikzlibrary{decorations.pathreplacing}
+ 
+ 
+%Information to be included in the title page:
+\title{Exact Sampling and Prefix Distributions}
+\author{Sebastian Oberhoff}
+\date{}
+ 
+ 
+ 
+\begin{document}
+ 
+\frame{\titlepage}
+ 
+\begin{frame}
+\frametitle{Exact Bernoulli Sampling}
+\[
+\begin{matrix}
+0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & 1\\
+\updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow \\
+b_0 & b_1 & b_2 & b_3 & b_4 & b_5 & b_6 & b_7 & b_8 & b_9
+\end{matrix}
+\]
+\end{frame}
+
+\begin{frame}
+\frametitle{Exact Bisection Sampling}
+
+\pgfmathdeclarefunction{poiss}{1}{%
+	\pgfmathparse{(#1^x)*exp(-#1)/(x!)}%
+}
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}
+    \begin{axis}[tick label style={/pgf/number format/fixed}, every axis plot post/.append style={
+      samples at = {0,...,15},
+      axis x line*=bottom,
+      axis y line*=left,
+      enlargelimits=upper}]
+      \addplot +[ycomb] {poiss(5)};
+      \draw[red, very thick] (45, 0) -- (45, 200);
+    \end{axis}
+    \end{tikzpicture}
+    \caption{Approximate bisection of the Poisson distribution with $\lambda = 5$ using 4.5 as the mid point}
+    \label{fig:bisection_0}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Exact Inverse Sampling}
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[scale=0.03\textwidth]
+	\draw (0,0) -- (1,0);
+	\draw (0.0067, -0.02) -- (0.0067, 0.02);
+	\draw (0.0404, -0.02) -- (0.0404, 0.02);
+	\draw (0.1246, -0.02) node[below]{$\hdots$}
+	-- (0.1246, 0.02);
+	\draw (0.2650, -0.02) node[below]{$F(3)$}
+	-- (0.2650, 0.02);
+	\draw (0.4404, -0.02) node[below]{$F(4)$}
+	-- (0.4404, 0.02);
+	\draw (0.6159, -0.02) node[below]{$F(5)$}
+	-- (0.6159, 0.02);
+	\draw (0.7621, -0.02) node[below]{$\hdots$}
+	-- (0.7621, 0.02);
+	\draw (0.8666, -0.02) -- (0.8666, 0.02);
+	\draw (0.9319, -0.02) -- (0.9319, 0.02);
+	\draw (0.9681, -0.02) -- (0.9681, 0.02);
+	\draw (0.9863, -0.02) -- (0.9863, 0.02);
+	\end{tikzpicture}
+	\caption{The unit interval divided into sections according to the Poisson distribution function when $\lambda = 5$}
+	\label{fig:inverse}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Exact Rejection Sampling}
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+    \begin{axis}
+    \addplot[mark=none,very thick,color=blue] coordinates {(0, 0) (1, 2)};
+    \path[fill=gray!15] (0, 0) -- (100, 0) -- (100, 200) -- cycle;
+    \node[circle,fill=red,scale=0.5] at (60, 70) {};
+    \end{axis}
+    \end{tikzpicture}
+    \caption{Rejection Sampling --- Samples that fall in the shaded region (as shown) are accepted}
+    \label{fig:rejection_0}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Exact Rejection Sampling}\begin{figure}
+    \centering
+    \begin{tikzpicture}
+    \begin{axis}
+    \path[fill=gray!15] (10, 137.5) -- (90, 137.5) -- (90, 150) -- (10, 150);
+    
+    \path[fill=gray!30] (20, 125) -- (90, 125) -- (90, 137.5) -- (20, 137.5);
+    
+    \path[fill=gray!15] (10, 125) -- (20, 125) -- (20, 137.5) -- (10, 137.5);
+    
+    \path[fill=gray!15] (90, 125) -- (100, 125) -- (100, 137.5) -- (90, 137.5);
+    
+    \path[fill=gray!15] (20, 112.5) -- (100, 112.5) -- (100, 125) -- (20, 125);
+    
+    \addplot[mark=none,very thick, color=blue] coordinates {(0, 0) (1, 2)};
+    
+    \draw[dashed] (62.5, 0) -- (62.5, 200);
+    \draw[dashed] (75, 0) -- (75, 200);
+    
+    \draw[dashed] (10, 150) -- (90, 150);
+    \draw[dashed] (10, 125) -- (90, 125);
+    
+    \draw[dashed] (20, 137.5) -- (100, 137.5);
+    \draw[dashed] (20, 112.5) -- (100, 112.5);
+    
+    \draw[decoration={brace, mirror}, decorate] (101, 112.5) -- node[right] {$y$} (101, 137.5);
+    
+    \draw[decoration={brace}, decorate] (9, 125) -- node[left] {$f(x)$} (9, 150);
+    
+    \draw[decoration={brace, mirror}, decorate] (62.5, -1) -- node[below] {$x$} (75, -1);
+    \end{axis}
+    \end{tikzpicture}
+    \caption{Having drawn $x = 0.101..._2$ and $y = 1.001..._2$ we know that $f(x)$ and $y$ fall somewhere into these intervals}
+    \label{fig:rejection_1}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Plotting Prefix Probabilities}
+\begin{figure}
+    \centering
+    \scalebox{0.77}{\input{normal_bin_cover}}
+    \caption{The normal distribution on the interval $[0,1]$ divided up according to which sections produce distinct prefixes (prefixes up to length 6 have been plotted)}
+    \label{fig:normal_bin_cover}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Plotting Prefix Probabilities}
+\begin{figure}
+    \centering
+    \scalebox{0.77}{\input{normal_bin_cover_padded}}
+    \caption{The normal distribution on the interval $[0,1]$ divided up according to which sections correspond to which padded prefixes (prefixes up to length 7 have been plotted)}
+    \label{fig:normal_bin_cover_padded}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Plotting Prefix Probabilities}
+\begin{figure}
+    \centering
+    \scalebox{0.77}{\input{normal_bin_pmf}}
+    \caption{The probability mass function of the prefix distribution of the normal distribution on the interval $[0,1]$ (prefixes up to length 7 have been plotted)}
+    \label{fig:normal_bin_pmf}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Plotting Prefix Probabilities}
+\begin{figure}
+    \centering
+    \scalebox{0.77}{\input{normal_bin_cdf}}
+    \caption{The cumulative distribution function of the prefix distribution of the normal distribution on the interval $[0,1]$ (probabilities for prefixes up to length 7 have been summed)}
+    \label{fig:normal_bin_cdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Plotting Prefix Probabilities}
+\begin{figure}
+    \centering
+    \scalebox{0.77}{\input{normal_bin_cover_full}}
+    \caption{The normal distribution on the interval $[-4,4]$ divided up by the unpadded prefix probabilities (prefixes up to length 5 have been plotted)}
+    \label{fig:normal_bin_cover_full}\vspace{2em}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Plotting Prefix Probabilities}
+\begin{figure}
+    \scalebox{0.77}{\input{normal_bin_cover_padded_full}}
+    \caption{The normal distribution on the interval $[-4,4]$ divided up by the padded prefix probabilities (prefixes up to length 5 have been plotted)}
+    \label{fig:normal_bin_cover_full}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Plotting Prefix Probabilities}
+\begin{figure}
+    \centering
+    \scalebox{0.77}{\input{normal_bin_pmf_full}}
+    \caption{The probability mass function of the prefix distribution of the normal distribution on the interval $[-4,4]$ (prefixes up to length 5 have been plotted)}
+    \label{fig:normal_bin_pmf_full}\vspace{2em}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Plotting Prefix Probabilities}
+\begin{figure}
+    \scalebox{0.77}{\input{normal_bin_cdf_full}}
+    \caption{The cumulative distribution function of the prefix distribution of the normal distribution on the interval $[-4,4]$ (probabilities for prefixes up to length 5 have been summed)}
+    \label{fig:normal_bin_cdf_full}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Increasing the Base}
+\begin{figure}
+	\scalebox{0.77}{\input{normal_dec_cover}}
+	\caption{The normal distribution on the interval $[0,1]$ divided up by the unpadded prefix probabilities in base 10 (prefixes up to length 3 have been plotted)}
+	\label{fig:normal_dec_cover}\vspace{2em}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{The Distribution of Prefix Lengths}
+\begin{claim}\label{a}
+	Let $f$ be a probability density and let $P$ be a base prefix for $f$. Assuming that $f$ is $K$-Lipschitz and has support $[i,i+1]$ where $i\in\mathbb{Z}$ it follows that  
+	\[
+	\pr{}{\#P \leq n} >1-2^{-n}K
+	\]
+\end{claim}
+\end{frame}
+
+\begin{frame}
+\frametitle{The Distribution of Prefix Lengths}
+\begin{figure}
+	\scalebox{0.77}{\input{normal_bin_cover_2}}
+	\caption{The normal distribution on the interval $[0,1]$ divided up according to which sections produce distinct prefixes (prefixes up to length 2 have been plotted)}
+	\label{fig:normal_bin_cover_2}\vspace{2em}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{The Distribution of Prefix Lengths}
+\begin{figure}
+	\scalebox{0.77}{\input{normal_bin_cover_riemann}}
+	\caption{This figure is identical to figure \ref{fig:normal_bin_cover_2} except that the thinnest rectangles have been vertically extended}
+	\label{fig:normal_bin_cover_riemann}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{The Distribution of Prefix Lengths}
+\begin{claim}
+	Using the previous definitions and assumptions we have for the expected base prefix length 
+	\[
+	\ev{}{\#P} \leq K
+	\]
+\end{claim}
+\begin{claim}
+	Using the previous definitions and assumptions, but where $f$ has arbitrary support we have
+	\[
+	\ev{}{\#P}\leq\sum_{i\in\mathbb{Z}} K_i
+	\]
+	where $K_i$ is the Lipschitz constant of $f$ corresponding to the interval $[i,i+1]$.
+\end{claim}
+\end{frame}
+
+\begin{frame}
+\frametitle{The Distribution of Prefix Lengths}
+\begin{lemma}
+	Given a differentiable function $f : \mathbb{R} \rightarrow \mathbb{R}$ we have
+	\[
+	\sup_{x\in[a,b]}|f(x)|\leq\int_a^b\frac{|f(x)|}{b-a}+|f'(x)|\,dx
+	\]
+	 for any $a\leq b$ where $a,b\in\mathbb{R}$.
+\end{lemma}
+\begin{claim}
+	Using the previous definitions and assumptions, if $f$ is twice differentiable, we have
+	\[
+	\ev{}{\#P}\leq\sum_{i\in\mathbb{Z}} K_i\leq \int_\mathbb{R}|f'(x)|+|f''(x)|\,dx
+	\]
+\end{claim}
+\end{frame}
+
+\begin{frame}
+\frametitle{The Distribution of Prefix Lengths}
+\begin{center}
+For the normal distribution we have
+\end{center}
+\[
+\begin{split}
+\ev{}{\#P} & \approx 0.1846\\
+\sum_{i\in\mathbb{Z}} K_i & \approx 1.2115\\
+\int_\mathbb{R}|f'(x)|+|f''(x)|\,dx & \approx 1.7658
+\end{split}
+\]
+\end{frame}
+
+\begin{frame}
+\frametitle{The Uniformity of Trailing Digits}
+\begin{theorem}
+	Let $X$ be a random variable that is distributed continuously according to a density function $f$. Then the $n$th trailing digits beyond the decimal point, when interpreted as a real number in the interval $[0,1]$, converge in distribution to the standard uniform distribution as $n\rightarrow\infty$.
+\end{theorem}
+\end{frame}
+
+\begin{frame}
+\frametitle{The Uniformity of Trailing Digits}
+\begin{center}
+The density of $\{X\}$ is given by
+
+\[
+\tilde{f}(x) =
+\begin{cases}
+\sum_{i\in\mathbb{Z}}f(i+x) & 0 < x \leq 1\\
+0 & \text{otherwise}
+\end{cases}
+\]
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{The Uniformity of Trailing Digits}
+The density $f_{2^n}$ of $2^nX$ is given by transforming the density for $X$ as
+\[
+f_{2^n}(x) = \frac{1}{2^n}f\left(\frac{x}{2^n}\right)\,.
+\]
+Thus, just as before we get the following density for $\{2^nX\}$:
+\[
+\tilde{f}_{2^n}(x)=
+\begin{cases}
+\sum_{i\in\mathbb{Z}}\frac{1}{2^n}f\left(\frac{i+x}{2^n}\right) & 0<x\leq 1\\
+0 & \text{otherwise}
+\end{cases}
+\]
+\end{frame}
+
+\begin{frame}
+\frametitle{The Uniformity of Trailing Digits}
+\begin{claim}
+	Using the previous definitions and assumptions, if $f$ has arbitrary support, we have
+	\[
+	\int_\mathbb{R} \left|\underset{[0,1]}{\mathbf{1}}(x)-\tilde{f}_{2^n}(x)\right|\,dx\leq2^{-n}\sum_{i\in\mathbb{Z}}K_i
+	\]
+	where $K_i$ is the Lipschitz constant of $f$ corresponding to the interval $[i,i+1]$.
+\end{claim}
+\end{frame}
+
+\begin{frame}
+\frametitle{Some Impossibility Results}
+\begin{claim}
+	Let $(A_n)$ be an enumeration of all possible algorithms. And let $(A_{n_k})$, $k$ starting at 1, be a subsequence consisting of all those algorithms that don't halt when run on themselves.
+	
+	Then there doesn't exist any randomized algorithm (an algorithm that has access to random bits during its computation) that can sample exactly from the distribution with probability mass function 
+	\[
+	P(i) = 
+	\begin{cases}
+	2^{-k} & \text{if $i=n_k$ for some $k$}\\
+	0 & \text{otherwise}
+	\end{cases}
+	\]
+	where $i\in\mathbb{N}$.
+\end{claim}
+\end{frame}
+
+\begin{frame}
+\frametitle{Some Impossibility Results}
+\begin{claim}
+	There exists no randomized algorithm that can sample exactly from the distribution with probability mass function
+	\[
+	P(i)=
+	\begin{cases}
+	p & \text{i=0}\\
+	1-p & \text{i=1}\\
+
+	\end{cases}
+	\]
+	where $i\in\{0,1\}$ and $p$ is not a computable number.
+\end{claim}
+\end{frame}
+ 
+\end{document}

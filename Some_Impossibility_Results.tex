@@ -1,0 +1,93 @@
+\section{Some Impossibility Results}
+
+Most of this thesis has focused on continuous distributions and their prefixes. We'll now close with two results regarding discrete distributions from a completely different arena -- the theory of computation. 
+
+The fact that we could sample exactly from virtually any discrete distribution might have come as a slight surprise to some. And it raises the question where the limits of the tools we have considered are. In fact, are there \textit{any} discrete distributions which one can \textit{not} sample exactly using exact bisection sampling or similar means? Indeed, there are -- though they are admittedly somewhat esoteric.
+
+To begin with, we'll have to recall the undecidability of the halting problem established by Alan Turing in \cite{Turing}. Because the argument is so disarmingly simple, we'll briefly recount it here.
+
+\begin{theorem}
+	There is no algorithm $H$ (alternatively Turing machine or computer program), accepting as inputs the description of another algorithm $A$ and a string $x$, that can within a finite amount of time determine whether $A$, when run on $x$, halts.
+\end{theorem}
+\begin{proof}
+As with all the proofs in this section, we argue by contradiction. Suppose such an algorithm $H$ exists. Then one can easily modify it into a new algorithm $\overline{H}$ that only takes a single argument $A$ defined as 
+\[
+\overline{H}(A) =
+\begin{cases}
+\text{enter an infinite loop} & \text{if }H(A,A)=\text{ true}\\
+\text{terminate} & \text{if }H(A,A)=\text{ false}
+\end{cases}
+\]
+Because $H(A, x)$ supposedly correctly determines whether $A$ halts on $x$, this is equivalent to
+\[
+\overline{H}(A) =
+\begin{cases}
+\text{enter an infinite loop} & \text{if }A(A)\text{ halts}\\
+\text{terminate} & \text{if }A(A)\text{ doesn't halt}
+\end{cases}
+\]
+We use "terminate" because it really doesn't matter what $\overline{H}$ outputs in that case. It only matters that $\overline{H}$ halts. Now the question is: Does $\overline{H}(\overline{H})$ halt? There are two options.
+\begin{itemize}
+	\item $\overline{H}(\overline{H})$ \textbf{halts}: But then by the definition of $\overline{H}$ it doesn't halt. \lightning
+	\item $\overline{H}(\overline{H})$ \textbf{doesn't halt}: But then by the definition of $\overline{H}$ it halts. \lightning
+\end{itemize}
+Either way, we get a contradiction. So we're forced to accept that $H$ can't exist.
+\end{proof}
+
+How do we turn this into a discrete distribution from which it is impossible to sample exactly? Like so:
+
+\begin{proposition}
+	Let $(A_n)$ be an enumeration of all possible algorithms. And let $(A_{n_k})$, $k$ starting at 1, be a subsequence consisting of all the non-halting algorithms (algorithms that don't halt when given themselves as input).
+	
+	Then there doesn't exist any randomized algorithm (an algorithm that has access to random bits during its computation) that can sample exactly from the distribution with probability mass function 
+	\[
+	P(i) = 
+	\begin{cases}
+	2^{-k} & \text{if $i=n_k$ for some $k$}\\
+	0 & \text{otherwise}
+	\end{cases}
+	\]
+	where $i\in\mathbb{N}$.
+\end{proposition}
+In other words, we've just placed some discrete distribution with infinite support, the geometric distribution with $p = 1/2$ to be exact, on the set of non-halting algorithms. 
+\begin{proof}
+It is an elementary result in the theory of computation that the set of non-halting algorithms can't be enumerated (in any order, possibly with repetitions). Suppose we could. Then we could solve the halting problem for any algorithm $A$ by doing the following in alternating fashion.
+\begin{itemize}
+	\item Run $A$ for a couple steps and see if it has halted yet. 
+	\item List out a few non-halting algorithms and see if $A$ shows up.
+\end{itemize}
+This process would sooner or later determine whether $A$ halts. But we've already seen that this cannot be done. Now it is definitely possible to run $A$ for a few steps at a time. So it must be that it is impossible to enumerate the non-halting algorithms.
+
+Since we can't even list the non-halting algorithms it will come as no surprise that we can't sample from them either. Usually these impossibility results proceed via a reduction. Just as in the previous paragraph, one demonstrates that, if it was possible to perform some task $T$, then one could indirectly solve the halting problem. Hence $T$ is impossible. But how do we use a random process to solve a problem such as the halting problem which demands a definite yes-or-no answer?
+
+The solution is to use a strategy known as \textit{derandomization}. This strategy usually entails taking a fast randomized algorithm and significantly shrinking the sample space of that algorithm. It may then become computationally feasible to exhaustively check through the entire sample space, yielding a deterministic algorithm that is now guaranteed to produce the correct result.
+
+We can reuse this idea of exhaustive checking to derandomize the supposed randomized algorithm that can sample from the indices of non-halting Turing machines. If we call this algorithm $N$, then one can turn this algorithm into a determinstic algorithm by making the random bits it has access to an input $r$ of $N$. We then repeatedly call $N$ on all possible finite sequences, one after the other.
+
+Because the indices of halting algorithms are sampled with probability 0, these will never appear as the output of $N$. On the other hand, for any given non-halting algorithm $A_{n_k}$ there is a non-zero probability of $n_k$ being produced by $N$. In other words, there must exist an input $r_k$ such that $N(r_k) = n_k$. Sooner or later we'll reach $r_k$, thus listing out $n_k$. And it is easy to use that to list out $A_{n_k}$ itself. So we have found a procedure that enumerates all non-halting algorithms, which is impossible. \lightning
+\end{proof}
+
+The second impossibility result concerns exact Bernoulli sampling. All the way back in the introduction there was the innocuous remark that Bernoulli sampling can be performed for any computable number, which is a number whose digits can be listed out by some algorithm. It is easy to show that there are numbers that aren't computable. After all, there are only countably many algorithms, yet uncountably many real numbers. So there must be quite a few real numbers that won't be listed out by any algorithm. Now one might ask if there's perhaps an even more remarkable trick which can't just perform exact Bernoulli sampling for computable numbers, but also for a few uncomputable ones.
+
+\begin{proposition}
+	There exists no randomized algorithm that can sample exactly from the distribution with probability mass function
+	\[
+	P(i)=
+	\begin{cases}
+	p & \text{i=0}\\
+	1-p & \text{i=1}\\
+
+	\end{cases}
+	\]
+	where $i\in\{0,1\}$ and $p$ is not a computable number.
+\end{proposition}
+\begin{proof}
+Suppose this was possible using some algorithm $N$ using random bits $r$ as its only input. We will again derandomize $N$ -- looping through all possible values of $r$ -- to produce an algorithm that can exactly list out the digits of $p$.
+
+When iterating through the possible values of $r$, there will be many for which $N$ hasn't terminated yet. We ignore those. But suppose we reach a value $r_k$ so that $N(r_k)=0$. We will then also know that $N$ outputs 0 for any string of bits that are a continuation of $r_k$. So if $\#r_k$ is the number of bits in $r_k$, we can conclude that there is at least a $2^{-\#r_k}$ chance that $N$ will output 0. We can add this probability to a tally we're keeping for the probability of sampling 0.
+
+If we do the same thing for the output 1, then we'll be able to track two partial sums that are converging to $p$ both from above and below. If they didn't converge, then either $N$ wouldn't be sampling with the correct probabilities or there would exist a non-zero probability that $N$ never terminates. The gap between these partial sums will eventually close far enough to determine every digit of $p$, one after the other. But that's impossible. \lightning
+\end{proof}
+
+
+

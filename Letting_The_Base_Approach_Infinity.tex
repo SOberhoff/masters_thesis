@@ -1,0 +1,29 @@
+\section{Letting The Base Approach Infinity}
+
+Looking at figures \ref{fig:normal_dec_cover_padded}, \ref{fig:normal_dec_pmf}, and \ref{fig:normal_dec_cdf} it seems evident that, if one increases the base further and further, one gets closer and closer to the distribution one initially unpadded prefixed with. The question is in what sense.
+
+It won't be the case that the probability mass function of the padded prefixes converges back to $f$, since a) the probabilities in the pmf converge to 0 and b) the pmf never becomes a continuous function. Instead, reminiscent of the central limit theorem, we'll have to argue that the cumulative distribution functions converge. 
+\begin{proposition}
+If $F$ is the original distribution function and $F_b$ is the distribution function for padded prefixes in base $b$, then
+\[
+\forall x: \lim_{b\rightarrow\infty} F_b(x) = F(x)
+\]
+\end{proposition}
+\begin{proof}
+First, as the base $b$ increases the probability that a padded prefix has length 1 approaches 1. This is a simple consequence of the fact that the probabilities corresponding to length 1 prefixes are effectively a lower Riemann sum. This is particularly clear from figure \ref{fig:normal_dec_cover_padded}. Since the area under the entire function is 1, so is the limit of the Riemann sums and thereby the limit of the probabilities. The only minor issue is the leftmost interval, which corresponds to prefixes of longer length. But since this interval decreases in length to 0, so does the probability of selecting a prefix in that interval. So for all $x$, if we let $R_b$ be a random variable distributed according to the base $b$ prefix distribution, we can write
+\[
+\begin{split}
+\lim_{b\rightarrow\infty} F_b(x) 
+& = \lim_{b\rightarrow\infty} \pr{b}{R_b \leq x}\\
+& = \lim_{b\rightarrow\infty} \left[\pr{b}{\#R_b = 1, R_b \leq x}+ \pr{b}{\#R_b > 1, R_b \leq x}\right]\\
+& = \lim_{b\rightarrow\infty} \pr{b}{\#R_b = 1, R_b \leq x}
+\end{split}
+\]
+where we're again using $\#$ to denote prefix length. We then conclude
+\[
+\lim_{b\rightarrow\infty} \pr{b}{\#R_b = 1, R_b \leq x} = F(x)
+\]
+because, again, $\pr{b}{\#R_b = 1, R_b \leq x}$ is just a lower Riemann sum on the interval $[-\infty, x]$, which converges to $F(x)$.
+\end{proof}
+
+This result may seem quite benign. But it does suggest that if one is on the lookout for any surprising features one should stick to small bases, since larger bases more and more just resemble the original distribution.

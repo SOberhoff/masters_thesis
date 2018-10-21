@@ -1,0 +1,81 @@
+\section{Exact Rejection Sampling}
+
+At this point we'll turn our attention to continuous distributions. Immediately a problem presents itself here. That is a sample from a continuous distribution will typically be an irrational number with infinitely many digits in its decimal representation. How can we hope to draw an exact sample if just printing it out is an indeterminate process?\\
+Clearly, we'll have to manage our expectations as to what we can accomplish here. But if all we ask for is a method that will produce arbitrarily many correct digits of an exact sample, then there are already plenty of methods available.
+
+Take the well known inverse sampling method. In the case of the exponential distribution with $\lambda = 1$ this method amounts to simply computing $-\ln(1-X)$ where $X \sim \text{U}[0,1]$. This task can be performed to arbitrary precision. So in the sense just described exact sampling would be quite uninteresting.
+
+But there's another sense in which exact sampling can be accomplished which isn't quite as trivial. We can try to sample just the leading digits of an exact sample so that the remaining digits then no longer depend on the distribution we're sampling from. In particular we'll see a way to sample leading digits, which we'll call a prefix, so that the remaining digits will be uniformly random. A prefix thus completely captures the characteristics of the distribution and so can arguably be referred to as an exact sample.
+
+The tool we'll use to accomplish this is a modification of rejection sampling. Let's focus on the interval [0,1] and let's choose for the purpose of illustration the distribution with density $f(x) = 2x$ as our target. The method of rejection sampling goes back to John von Neumann and is usually stated in terms of some proposal distribution. But we'll focus on the case where the uniform distribution on $[0,1]$ is our proposal distribution, because that's what our infinite stream of random bits most readily supplies.
+
+Rejection sampling then says to do the following:
+\begin{enumerate}
+    \item Draw a sample $x$ from the proposal distribution U$[0,1]$
+    \item Accept $x$ as the sample with probability $\frac{2x}{2} = x$ (we'll do so by comparing $2x$ to another sample from U$[0,2]$)
+    \item If $x$ was rejected, start over
+\end{enumerate}
+These steps can be visualized as in figure \ref{fig:rejection_0}. We draw a sample from the uniform distribution on the rectangle enclosing our target density function. If it falls below the density function, the x-coordinate of that point becomes the sample.
+
+\begin{figure}
+    \centering
+    \begin{tikzpicture}[scale=1.3]
+    \begin{axis}
+    \addplot[mark=none,very thick,color=blue] coordinates {(0, 0) (1, 2)};
+    \path[fill=gray!15] (0, 0) -- (100, 0) -- (100, 200) -- cycle;
+    \node[circle,fill=red,scale=0.5] at (60, 70) {};
+    \end{axis}
+    \end{tikzpicture}
+    \caption{Rejection Sampling --- Samples that fall in the shaded region (as shown) are accepted}
+    \label{fig:rejection_0}
+\end{figure}
+
+There are plenty of expositions in the literature that give a more thorough justification of these steps. The way this is usually implemented is by approximating the uniform distribution using some finite number of bits, inevitably incurring some error. But using exact Bernoulli sampling we can do better.
+
+In essence, we'll consider the rectangle defined by the leading digits of $x$ and $y$. By drawing additional digits for $x$ and $y$ we can shrink this rectangle arbitrarily small until we're certain that it falls either wholly below or above $f$. At that point we know whether to accept or reject, without having to examine further digits. Let's walk through an example.
+
+Suppose the leading bits of our uniform sample $x$ for the x-coordinate are $101...\,.$ This narrows down our sample to the interval [0.625, 0.75]. We can think of this as defining a $\delta$-environment from basic calculus. This in turn defines a corresponding $\epsilon$-environment [1.25, 1.5] into which $2x$ falls.
+
+Furthermore, let's imagine that the leading bits of our second sample $y$, drawn from U[0, 2], were $1001...\,.$ This allows us to narrow down $y$ to [1.125, 1.375]. Figure \ref{fig:rejection_1} shows what's going on.
+
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[scale=1.3]
+    \begin{axis}
+    \path[fill=gray!15] (10, 137.5) -- (90, 137.5) -- (90, 150) -- (10, 150);
+    
+    \path[fill=gray!30] (20, 125) -- (90, 125) -- (90, 137.5) -- (20, 137.5);
+    
+    \path[fill=gray!15] (10, 125) -- (20, 125) -- (20, 137.5) -- (10, 137.5);
+    
+    \path[fill=gray!15] (90, 125) -- (100, 125) -- (100, 137.5) -- (90, 137.5);
+    
+    \path[fill=gray!15] (20, 112.5) -- (100, 112.5) -- (100, 125) -- (20, 125);
+    
+    \addplot[mark=none,very thick, color=blue] coordinates {(0, 0) (1, 2)};
+    
+    \draw[dashed] (62.5, 0) -- (62.5, 200);
+    \draw[dashed] (75, 0) -- (75, 200);
+    
+    \draw[dashed] (10, 150) -- (90, 150);
+    \draw[dashed] (10, 125) -- (90, 125);
+    
+    \draw[dashed] (20, 137.5) -- (100, 137.5);
+    \draw[dashed] (20, 112.5) -- (100, 112.5);
+    
+    \draw[decoration={brace, mirror}, decorate] (101, 112.5) -- node[right] {$y$} (101, 137.5);
+    
+    \draw[decoration={brace}, decorate] (9, 125) -- node[left] {$f(x)$} (9, 150);
+    
+    \draw[decoration={brace, mirror}, decorate] (62.5, -1) -- node[below] {$x$} (75, -1);
+    \end{axis}
+    \end{tikzpicture}
+    \caption{Having drawn $x = 0.101..._2$ and $y = 1.001..._2$ we know that $f(x)$ and $y$ fall somewhere into these intervals}
+    \label{fig:rejection_1}
+\end{figure}
+
+Now these intervals for $f(x)$ and $y$ overlap. So we can't say for certain whether $x$ should be rejected or not. But that's easy to remedy. Just draw additional bits for $x$ and $y$. Sooner or later (and chances are sooner) these intervals will separate. And then we'll know whether to accept $x$ or to try again.
+
+But note that something remarkable happens as soon as we accept $x$. At that point we've determined some of the leading bits of $x$ through careful testing with the rejection method. But the remaining bits can now be drawn from our infinite random bit supply without any further thought! We can forget all about the function $f(x)=2x$ and just pump out the remaining bits of our sample as fast as our random number generator is able to mint them.\\\noindent
+
+The previous discussion was loosely inspired by work from C. Karney in \cite{Karney}. Though Karney only focuses on the normal distribution and its counterpart, the discrete normal distribution, and doesn't employ rejection sampling. Instead it uses a less general tailor made algorithm.

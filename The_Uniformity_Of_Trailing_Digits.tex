@@ -1,0 +1,87 @@
+\section{The Uniformity Of Trailing Digits}
+
+We've now seen that under relatively minor assumptions the prefixes of continuous distributions are quite short. This also means that the trailing digits of continuous distributions rapidly converge to the uniform distribution. We now make this statement more exact. The following discussion won't rely on insights based on prefixes and is instead essentially a generalization of an argument that is suggested by Arif Zaman in \cite{Zaman}.
+
+\begin{theorem}
+	Let $X$ be a random variable that is distributed continuously according to a Riemann integrable density function $f$. Then the trailing digits $n$ places beyond the decimal point, when interpreted as a real number in the interval $[0,1]$, converge in distribution to the standard uniform distribution as $n\rightarrow\infty$.
+\end{theorem}
+\begin{proof}
+We begin by denoting the fractional part of $X$ as $\{X\}$. Then the density of $\{X\}$ is given by
+\[
+\tilde{f}(x) =
+\begin{cases}
+\sum_{i\in\mathbb{Z}}f(i+x) & 0 < x \leq 1\\
+0 & \text{otherwise}
+\end{cases}
+\]
+The case $0<x\leq1$ follows from the fact that, if we denote the corresponding cumulative distribution functions $F$ and $\tilde{F}$, then clearly for $0<x\leq1$ we have
+\[
+\tilde{F}(x) = \sum_{i\in\mathbb{Z}}F(i+x)-F(i)\,.
+\]
+We're just summing up all the probabilities corresponding to intervals $[i,i+x]$ where the fractional part is less than $x$. Then differentiate both sides with respect to $x$.
+\[
+\begin{split}
+\tilde{f}(x) & =\frac{d}{dx}\sum_{i\in\mathbb{Z}}F(i+x)-F(i)\\
+			 & =\frac{d}{dx}\sum_{i\in\mathbb{Z}}\int_0^x f(i+x)\,dx\\
+			 & =\frac{d}{dx}\int_0^x\sum_{i\in\mathbb{Z}}f(i+x)\,dx\qquad\text{by Fubini's theorem}\\
+			 & =\sum_{i\in\mathbb{Z}}f(i+x)\,dx
+\end{split}
+\]
+
+Now that we know the density of $\{X\}$, the density for digits that are trailing $n$ places beyond the decimal point is close at hand. If we continue expressing our numbers in binary it'll be the density of the random variable $\{2^nX\}$. After all, multiplying by $2^n$ just shifts all the bits $n$ places to the left.
+
+The density $f_{2^n}$ of $2^nX$ is given by transforming the density for $X$ as
+\[
+f_{2^n}(x) = \frac{1}{2^n}f\left(\frac{x}{2^n}\right)\,.
+\]
+Thus, just as before, we get the following density for $\{2^nX\}$:
+\[
+\tilde{f}_{2^n}(x)=
+\begin{cases}
+\sum_{i\in\mathbb{Z}}\frac{1}{2^n}f\left(\frac{i+x}{2^n}\right) & 0<x\leq 1\\
+0 & \text{otherwise}
+\end{cases}
+\]
+Notice that this is really just a Riemann sum again. For any fixed $x$ we're evaluating $f$ at distances $2^{-n}$ apart and multiplying the result by the width of the corresponding interval. Since $f$ integrates to 1, we get
+\[
+\lim_{n\rightarrow\infty}\tilde{f}_{2^n}(x) = 
+\begin{cases}
+1 & 0<x\leq 1\\
+0 & \text{otherwise}
+\end{cases}
+\]
+which is exactly the density of the standard uniform distribution.
+\end{proof}
+
+Further, we can see that this convergence tends to be extremely rapid. We can measure this, for instance, in terms of the $L_1$-distance between $f_{2^n}$ and the standard uniform density. The argument follows the same lines as the previous section.
+
+\begin{proposition}
+	Given a density function $f$, if $f$ is $K$-Lipschitz and has support $[i,i+1]$, $i\in\mathbb{Z}$, then
+	\[
+	\int_\mathbb{R} \left|\underset{[0,1]}{\mathbf{1}}(x)-\tilde{f}_{2^n}(x)\right|\,dx\leq2^{-n}K
+	\]
+	where $\mathbf{1}_{[0,1]}$ is the indicator function for the interval $[0,1]$ and $\tilde{f}_{2^n}$ is the density of the trailing digits beyond the $n$th bit.
+\end{proposition}
+\begin{proof}
+$\mathbf{1}_{[0,1]}$ and $\tilde{f}_{2^n}$ are both equal everywhere outside the interval $[0,1]$. On the interval $[0,1]$ on the other hand, $\mathbf{1}_{[0,1]}=1$ and $\tilde{f}_{2^n}(x)$ is a Riemann sum for any fixed $x$. Since it is the Riemann sum for $f$ which integrates to 1, $\left|1-\tilde{f}_{2^n}(x)\right|$ is really just the error of the Riemann sum. And we've already seen in the proof of proposition \ref{a} how we can bound this error above by $2^{-n}K$
+\end{proof}
+
+This leads straight to:
+
+\begin{proposition}
+	Using the previous definitions and assumptions, if $f$ has arbitrary support, we have
+	\[
+	\int_\mathbb{R} \left|\underset{[0,1]}{\mathbf{1}}(x)-\tilde{f}_{2^n}(x)\right|\,dx\leq2^{-n}\sum_{i\in\mathbb{Z}}K_i
+	\]
+	where $K_i$ is the Lipschitz constant of $f$ corresponding to the interval $[i,i+1]$.
+\end{proposition}
+\begin{proof}
+For densities with arbitrary support we get an error of at most $2^{-n}K_i$ on every interval of unit length by the previous result. We simply sum these errors over all $i\in\mathbb{Z}$.
+\end{proof}
+
+Of course the sum over the $K_i$ is a familiar face from the previous section. So we can immediately also give the upper bound $2^{-n}\int_\mathbb{R}|f'(x)|+|f''(x)|\,dx$, provided that $f$ is twice differentiable.\\
+
+Arif Zaman was brought to the distribution of fractions by examining a wheel of fortune and asking what the distribution of the resting position for the wheel might be. He assumed the circumference of the wheel to be normed to 1 and that the total distance traveled was a normally distributed random variable $X$. Since the wheel effectively removes the integer part of $X$ after each rotation, the resting position will then be $\{X\}$.
+
+Now a wheel of fortune may seem like a rather droll thing to study, but in fact wheels of fortune are all over the place. Take any physical measurement that is performed to high accuracy and look at its bits $n$ places beyond the decimal point. This is nothing other than a wheel of fortune that has been normed to length $2^{-n}$! 
+

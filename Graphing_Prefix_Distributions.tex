@@ -1,0 +1,183 @@
+\section{Graphing Prefix Distributions}
+
+It's usually best to begin building an intuition for something new by producing some visual aids. So what we'll start with is to find ways to graph prefix distributions. For this we'll have to find a way to compute the probabilities of various prefixes occurring. Perhaps surprisingly these probabilities can be represented in a quite natural visual form.
+
+\subsection{Unpadded Prefix Probabilities}
+
+Let's stick to the example of the normal distribution on the interval $[0,1]$. And let's momentarily focus only on unpadded prefixes. Then figure \ref{fig:normal_bin_cover} shows a graphical representation of the probabilities for various prefixes.
+
+\begin{figure}
+    \centering
+    \input{normal_bin_cover}
+    \caption{The normal distribution on the interval $[0,1]$ divided up according to which sections produce distinct prefixes (prefixes up to length 6 have been plotted)}
+    \label{fig:normal_bin_cover}
+\end{figure}
+
+For the following discussion it will be useful to think of our algorithm for exact rejection sampling as being very generous when sampling digits of $y$, whereas it only samples the absolute minimum required amount of digits for $x$. And recall that when performing rejection sampling we're eventually placing a uniformly random point on the area below the graph and then using the $x$-coordinate as our sample.\\
+The large box at the bottom of figure \ref{fig:normal_bin_cover} covers all the positions for which we return the empty prefix. It cuts off at the top just at the value 0.709 which is the minimum of the normal distribution on the interval $[0,1]$ when conditioned on that interval. The reason this box corresponds to the empty prefix is that if we begin drawing samples for the $y$-coordinate of our uniform sample in $[0,1]\times[0,1.169]$ and we find that $y$ falls below this line, then we can already conclude that we're going to accept the $x$-coordinate as our normal sample, regardless of where it falls. So we don't even need to draw a single digit for $x$. On the other hand, if $y$ falls above 0.709, then we need further information about $x$ in order to decide whether to accept $x$ or discard it and try again. Since this requires sampling at least a single bit of $x$, the area above 0.709 corresponds entirely to other prefixes.
+
+Let's discuss one more example. The second largest box in figure \ref{fig:normal_bin_cover}, situated in the top left, corresponds to the prefix 0. Here $y$ fell above 0.709, so we had to sample the first digit of $x$. This turned out to be 0, narrowing down our search to the left half. We then sampled $y$ to sufficient accuracy to determine that it fell below 1.031, the value at the midpoint of our distribution function. At that point we're again guaranteed to accept $x$ no matter its further digits. In a similar fashion we can cover the entire area with smaller and smaller rectangles.
+
+Thus, the general method for finding the rectangle corresponding to a given prefix $p$ and density function $f$ is:
+\begin{itemize}
+    \item The left boundary is given by attaching infinitely many zeros, or equivalently by mapping $p$ to the directly corresponding real number.
+    \item The right boundary is given by attaching infinitely many ones, or equivalently adding $2^{-n}$ if $p$ is of length $n$.
+    \item The bottom boundary is given by removing the last digit of $p$ and finding the upper boundary of that prefix.
+    \item The upper boundary is given by finding the minimum of $f$ over the interval delineated by the left and right boundaries.
+\end{itemize}
+Any sample from $\mathbb{R}^2$ that falls to the left or right of these boundaries will have an $x$-coordinate that disagrees with $p$. Any sample that falls within the interval, but below the lower boundary, will have been accepted before sampling all of $p$. And any sample that falls within the interval, but above the upper boundary, will require more information about the digits of the $x$-coordinate than $p$ can provide.
+
+Conversely, any sample from $\mathbb{R}^2$ that falls within these boundaries corresponds to $p$, because, by the same arguments as in the previous paragraph, it doesn't correspond to any other prefix.
+
+Furthermore, because we're picking the sample uniformly in the area below $f$ and because the total area below $f$ is exactly 1, the area of each of these rectangles is exactly equal to the probability that we'll pick the corresponding prefix.
+
+This gives us not only a simple visualization of the probabilities involved, but also the means to compute these probabilities. In the following we use $\#p$ to denote the number of digits of $p$. $p_{-k}$ denotes $p$ with $k$ digits removed at the end. And $[p]$ is shorthand for the interval prefixed by $p$ - that is $[p] \coloneqq [p, p+2^{-\#p}]$ where the right-hand side is abusing notation slightly to use $p$ as a real number, not just as a string of bits. Then for a given unpadded prefix $p$ its probability to be picked is
+\[
+P_{\text{up}}(p) \coloneqq \underbrace{2^{-\#p}}_{\text{width of rectangle}}\:\cdot \underbrace{(\min_{[p_{-1}]} f - \min_{[p]} f)}_{\text{height of rectangle}}\,.
+\]
+
+(The up in $P_{\text{up}}$ stands for unpadded.) The only nontrivial hurdle that needs to be taken is to find means to minimize the given distribution function $f$ on arbitrary intervals. Though all the distribution functions we'll examine here will be so well behaved that this will be of no real practical concern.
+
+\subsection{Padded Prefix Probabilities}
+
+Now that we've seen how to determine the probabilities of unpadded prefixes we're ready to tackle the probabilities of padded prefixes. The only difference between these was that if a unpadded prefix didn't terminate with a 1, we would attach uniformly random bits until we hit a 1, giving us a padded prefix.
+
+Let's interpret what this means in terms of figure \ref{fig:normal_bin_cover}. Take again the large box at the bottom corresponding to the empty prefix. This prefix doesn't end with a 1 (a special case which doesn't end with a 0 either), so it'll have to be padded. Half of the padded prefixes will have a 0 as their first bit, the other half a 1. We can visualize this by splitting the area corresponding to the empty prefix down the middle and erasing the top boundary. Doing this we're in effect "adding" half the probability of the empty prefix to the prefix 0 and half to the prefix 1.
+
+The prefix 1 ends with a 1, so we're done there. This is not so with the prefix 0. It will have to be split again and have its upper boundary erased. The same will have to be done with the prefix 00, 000, etc. but also the prefix 10, 1010 and any other prefix ending with a 0. Performing this splitting and merging recursively for figure \ref{fig:normal_bin_cover} ultimately produces what can be seen in figure \ref{fig:normal_bin_cover_padded}.
+
+\begin{figure}[h]
+    \centering
+    \input{normal_bin_cover_padded}
+    \caption{The normal distribution on the interval $[0,1]$ divided up according to which sections correspond to which padded prefixes (prefixes up to length 9 have been plotted)}
+    \label{fig:normal_bin_cover_padded}
+\end{figure}
+
+The fact that padded prefixes correspond to unique real numbers can now be appreciated visually. Whereas in figure \ref{fig:normal_bin_cover} there where many rectangles whose right-end boundaries were above the same point on the $x$-axis, in figure \ref{fig:normal_bin_cover_padded} there's an infinite recursion occurring above each rectangle on the right. So all right-hand boundaries, if projected down onto the $x$-axis, would now hit a unique real number.
+
+Indeed, one could use figure \ref{fig:normal_bin_cover_padded} to devise a slightly alternate algorithm to sample from prefix distributions. One could draw a uniformly random sample from the region below $f$ using rejection, determine the sample until it was fully contained within one of the rectangles, and then return the $x$-coordinate of the right-hand boundary as the sample. 
+
+With this image in mind we'll now turn to actually computing the probabilities involved. Given that we already know how to compute probabilities for unpadded prefixes using $P_{\text{up}}$, it is relatively straightforward to compute the probabilities of padded prefixes. For a prefix $p$ return
+\begin{itemize}
+    \item 0 if $p$ doesn't end with a 1
+    \item \[\sum 2^{-k}\cdot P_{\text{up}}(p_{-k})\] if $p$ does end with a 1. The sum here ranges over $k$ starting at 0 until $p_{-k}$ either reaches the empty prefix (included) or another prefix ending with 1 (excluded).
+\end{itemize}
+The summation here can be thought of as scanning backward from $p$. Every prefix $p_{-k}$ has a $P_{\text{up}}(p_{-k})$ chance to get picked and a $2^{-k}$ chance to lead to the prefix $p$.
+
+For instance, if $p = 1001$, then it can either be picked straight away with probability $P_{\text{up}}(1001)$. Or the prefix $100$ might be picked, leading to $1001$ with probability $1/2$. Or $10$ could be picked, which leads to $1001$ with probability $1/4$.
+
+We're now finally in the position to graph a prefix distribution. Figure \ref{fig:normal_bin_pmf} illustrates the probabilities of the various prefixes of the normal distribution on the interval $[0,1]$. One interesting feature of this graph is that it is quite self-similar at small scales. This was more obvious for the preceding graphs, it is a little less clear to the naked eye here. The little clusters that can be seen, for instance, above 0.6 and 0.8 are, if magnified, almost exact copies of the entire graph.
+
+Similarly, we can produce a graph for the cumulative distribution function as seen in figure \ref{fig:normal_bin_cdf}. This picture looks slightly crooked which is just the result of many small jumps giving the impression of a continuously upward sloping function.
+
+\begin{figure}[h!]
+    \centering
+    \input{normal_bin_pmf}
+    \caption{The probability mass function of the prefix distribution of the normal distribution on the interval $[0,1]$ (prefixes up to length 7 have been plotted)}
+    \label{fig:normal_bin_pmf}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \input{normal_bin_cdf}
+    \caption{The cumulative distribution function of the prefix distribution of the normal distribution on the interval $[0,1]$ (probabilities for prefixes up to length 7 have been summed)}
+    \label{fig:normal_bin_cdf}
+\end{figure}
+
+\subsection{Plots, Plots, Plots}
+
+Finally, we can can use the tools we've seen so far to produce plots not only for the interval $[0,1]$ but for all of $\mathbb{R}$. This is done simply by dividing $\mathbb{R}$ up into unit length intervals from one integer to the next. Within each of these intervals we can produce a plot for the conditional distribution on that interval. We then simply piece all of these plots together, producing the final result.
+
+The area in each rectangle will shrink as we rescale the conditional distributions so that the entire area below the graph will again be 1. But in every case it will be shrunk by exactly the proportionate amount, accurately reflecting the probability that a given prefix, now including the integer component, will be chosen.
+
+The following figures show this idea applied to all the plots we've seen so far in this section. Also, plots for both the exponential distribution with $\lambda = 1$ and a sinusoidal distribution with density $f(x) = \sin(4\pi x) + 1$ on the interval $[0,1]$ have been added for comparison.
+
+Finally, it is worth considering the fact that, starting all the way from the very beginning, we could have had this entire discussion not just in base 2, but in any base whatever. This would've produced completely analogous algorithms for sampling exactly from discrete distributions. And it would've produced an analogous algorithm to perform exact rejection sampling, in turn producing analogous prefix distributions. We'll end this section by showcasing a few more graphs (figure \ref{fig:normal_dec_cover} and following) of the normal distribution on the interval $[0,1]$ in base 10, which illuminate the logic behind prefix distributions somewhat more vividly than the binary paradigm.
+
+\begin{figure}
+    \centering
+    \input{normal_bin_cover_full}
+    \caption{The normal distribution on the interval $[-4,4]$ divided up by the unpadded prefix probabilities (prefixes up to length 5 have been plotted)}
+    \label{fig:normal_bin_cover_full}\vspace{2em}
+    
+    \input{normal_bin_cover_padded_full}
+    \caption{The normal distribution on the interval $[-4,4]$ divided up by the padded prefix probabilities (prefixes up to length 5 have been plotted)}
+    \label{fig:normal_bin_cover_full}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \input{normal_bin_pmf_full}
+    \caption{The probability mass function of the prefix distribution of the normal distribution on the interval $[-4,4]$ (prefixes up to length 5 have been plotted)}
+    \label{fig:normal_bin_pmf_full}\vspace{2em}
+    
+    \input{normal_bin_cdf_full}
+    \caption{The cumulative distribution function of the prefix distribution of the normal distribution on the interval $[-4,4]$ (probabilities for prefixes up to length 5 have been summed)}
+    \label{fig:normal_bin_cdf_full}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \input{exp_bin_cover_full}
+    \caption{The exponential distribution on the interval $[0,5]$ divided up by the unpadded prefix probabilities (prefixes up to length 5 have been plotted)}
+    \label{fig:exp_bin_cover_full}\vspace{2em}
+    
+    \input{exp_bin_cover_padded_full}
+    \caption{The exponential distribution on the interval $[0,5]$ divided up by the padded prefix probabilities (prefixes up to length 5 have been plotted)}
+    \label{fig:exp_bin_cover_padded_full}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \input{exp_bin_pmf_full}
+    \caption{The probability mass function of the prefix distribution of the exponential distribution on the interval $[0,5]$ (prefixes up to length 5 have been plotted)}
+    \label{fig:exp_bin_pmf_full}\vspace{2em}
+    
+    \input{exp_bin_cdf_full}
+    \caption{The cumulative distribution function of the prefix distribution of the exponential distribution on the interval $[0,5]$ (probabilities for prefixes up to length 5 have been summed)}
+    \label{fig:exp_bin_cdf_full}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \input{sin_bin_cover_full}
+    \caption{The sinusoidal distribution on the interval $[0,1]$ divided up by the unpadded prefix probabilities (prefixes up to length 7 have been plotted)}
+    \label{fig:sin_bin_cover_full}\vspace{2em}
+    
+    \input{sin_bin_cover_padded_full}
+    \caption{The sinusoidal distribution on the interval $[0,1]$ divided up by the padded prefix probabilities (prefixes up to length 7 have been plotted)}
+    \label{fig:sin_bin_cover_padded_full}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \input{sin_bin_pmf_full}
+    \caption{The probability mass function of the prefix distribution of the sinusoidal distribution on the interval $[0,1]$ (prefixes up to length 7 have been plotted)}
+    \label{fig:sin_bin_pmf_full}\vspace{2em}
+    
+    \input{sin_bin_cdf_full}
+    \caption{The cumulative distribution function of the prefix distribution of the sinusoidal distribution on the interval $[0,1]$ (probabilities for prefixes up to length 7 have been summed)}
+    \label{fig:sin_bin_cdf_full}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\input{normal_dec_cover}
+	\caption{The normal distribution on the interval $[0,1]$ divided up by the unpadded prefix probabilities in base 10 (prefixes up to length 3 have been plotted)}
+	\label{fig:normal_dec_cover}\vspace{2em}
+	
+	\input{normal_dec_cover_padded}
+	\caption{The normal distribution on the interval $[0,1]$ divided up by the padded prefix probabilities in base 10 (prefixes up to length 3 have been plotted)}
+	\label{fig:normal_dec_cover_padded}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\input{normal_dec_pmf}
+	\caption{The probability mass function of the prefix distribution of the normal distribution on the interval $[0,1]$ in base 10 (prefixes up to length 3 have been plotted)}
+	\label{fig:normal_dec_pmf}\vspace{2em}
+	
+	\input{normal_dec_cdf}
+	\caption{The cumulative distribution function of the prefix distribution of the normal distribution on the interval $[0,1]$ in base 10 (probabilities for prefixes up to length 3 have been summed)}
+	\label{fig:normal_dec_cdf}
+\end{figure}

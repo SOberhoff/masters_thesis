@@ -1,0 +1,32 @@
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+Imagine we had access to an infinite supply of independent random bits equally likely to be 0 or 1. And suppose we were asked to simulate a weighted random bit with probability $p=0.25$ for 0 and 0.75 for 1. Using the infinite supply of bits at our command this is a straightforward task. Simply map the first two bits as follows:
+\[
+\begin{split}
+00 \rightarrow 0\\
+01 \rightarrow 1\\
+10 \rightarrow 1\\
+11 \rightarrow 1
+\end{split}
+\]
+This much is easy. But what if $p$ was a more complicated number such as $1/\pi$? This seems like a much more challenging task. Indeed, here is a "proof" that it is impossible to perform this task exactly.
+
+Any finite computation can only examine a finite number, say $n$, of the input bits. This sequence of $n$ input bits takes on every possible value with equal probability of $2^{-n}$. No matter what computation we perform on this sequence, ultimately 0 will result with some probability that is a multiple of $2^{-n}$. But $1/\pi$ isn't a multiple of $2^{-n}$ for any $n$. Even though we can make the error arbitrarily small, some will always remain.
+
+This argument seems very persuasive. And yet there is a loophole. Consider the following procedure.
+
+First, try thinking of the infinite sequence of random bits we have access to as an exact sample from the uniform distribution on the interval $[0,1]$, which has been given in binary. This sample falls below $1/\pi$ with probability $1/\pi$ exactly. But how do we compare two infinitely long sequences of digits? Here's how: Begin by writing out a few digits of the binary representation of $1/\pi$.
+$$\frac{1}{\pi} = 0.0101000101..._2$$
+Then compare the bits beyond the decimal point with the random bits we've been given.
+\[
+\begin{matrix}
+0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & 1\\
+\updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow & \updownarrow \\
+b_0 & b_1 & b_2 & b_3 & b_4 & b_5 & b_6 & b_7 & b_8 & b_9
+\end{matrix}
+\]
+If all of these bits miraculously agree with each other, just compute some more bits of $1/\pi$ and compare these with more random bits. Sooner or later we'll find a disagreement between these two sequences. At that point we know which is larger, the rest of the infinite sequence of bits of either number doesn't matter!
+
+We'll refer to this trick, originating as far as we are aware from \cite{Knuth-Yao}, as \textit{exact Bernoulli sampling}. It circumvents the "proof" given earlier by potentially running arbitrarily long. And yet it is by no means infeasible. The number of required comparisons follows a geometric distribution with $p=1/2$, so the expected number of required comparisons is a mere 2. Also note that we didn't depend in any way on special properties of $1/\pi$. We could have proceeded in the same way with any computable number imaginable as our $p$. The only component that can cause worry is the complexity of computing digits of $p$ - though we won't meet any examples where this becomes a critical issue here. The plan for the rest of this discussion is to take exact Bernoulli sampling and milk it as much as possible.

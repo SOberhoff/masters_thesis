@@ -1,0 +1,85 @@
+\section{Appendix}
+
+The following is a listing of the code that was used to compute the probabilities of various prefixes. It is written in Clojure, a descendant of Lisp.
+
+\begin{lstlisting}[breaklines=true, basicstyle=\small]
+(ns exact-sampling.plot
+  (:require [clojure.math.numeric-tower :refer [expt]]
+            [clojure.string :as str])
+  (:import (org.apache.commons.math.optimization MultiStartUnivariateRealOptimizer GoalType)
+           (org.apache.commons.math.optimization.univariate BrentOptimizer)
+           (org.apache.commons.math.random JDKRandomGenerator)
+           (org.apache.commons.math.analysis UnivariateRealFunction)))
+
+(def minimize
+  "Finds the minimum of a function f on the interval [a,b]."
+  (memoize
+    (fn [f a b]
+      (-> (MultiStartUnivariateRealOptimizer. (BrentOptimizer.) 100 (JDKRandomGenerator.))
+          (.optimize (reify UnivariateRealFunction (value [_ x] (f x))) GoalType/MINIMIZE a b)
+          (f)))))
+
+(defn prefix-to-number [[base digits]]
+  "Given a base and a sequence of digits in that base, returns the corresponding number."
+  (->> digits
+       (map-indexed #(* (expt base (- (inc %1))) %2))
+       (reduce +)))
+
+(defn prefix-to-interval-length [[base digits]]
+  "Given a base and a sequence of digits in that base, returns the width of the interval
+  corresponding to all numbers in that base beginning with those digits."
+  (expt base (- (count digits))))
+
+(defn prefix-to-interval [[base digits]]
+  "Given a base and a sequence of digits in that base, returns a tuple [a,b] denoting the interval
+   corresponding to all numbers in that base beginning with those digits."
+  (let [a (prefix-to-number [base digits])]
+    [a (+ a (prefix-to-interval-length [base digits]))]))
+
+(defn prefix-to-probability [f [base digits]]
+  "Given a probability density function f, a base, and a sequence of digits, returns the probability
+  that an unpadded prefix in the given base with the given digits will be selected."
+  (if (empty? digits)
+    (minimize f 0 1)
+    (let [current-min (apply minimize f (prefix-to-interval [base digits]))
+          previous-min (apply minimize f (prefix-to-interval [base (butlast digits)]))]
+      (* (- current-min previous-min) (prefix-to-interval-length [base digits])))))
+
+(defn leading-digits [digits]
+  "Given a sequence of digits, returns a sequence of prefix sequences ending with the empty sequence.
+  E.g. 101 yields (10, 1, [])."
+  (concat (take-while some? (iterate butlast (butlast digits))) [[]]))
+
+(defn padded-prefix-to-probability [f [base digits]]
+  "Given a probability density function f, a base, and a sequence of digits, returns the probability
+  that a padded prefix in the given base with the given digits will be selected."
+  (if (or (empty? digits) (zero? (last digits)))
+    0
+    (->> (leading-digits digits)
+         (take-while #(or (empty? %) (zero? (last %))))
+         (map-indexed #(* (expt base (- (inc %1))) (prefix-to-probability f [base %2])))
+         (reduce +)
+         (+ (prefix-to-probability f [base digits])))))
+
+(defn digits-up-to-length-n [base n]
+  "Returns a sequence of all sequences of digits up to length n in the given base."
+  (->> (iterate #(mapcat (fn [digits] (map (partial conj digits) (range base))) %) [[]])
+       (take (inc n))
+       (apply concat)))
+
+(defn probability-map-0-1 [f base n]
+  "Takes a probability density function f with support [0,1], a base, and a maximum prefix length n.
+  Returns a map from the padded prefixes (represented as doubles) to their corresponding probabilities."
+  (->> (digits-up-to-length-n base n)
+       (map #(vector (prefix-to-number [base %]) (padded-prefix-to-probability f [base %])))
+       (filter #(pos? (second %)))
+       (into (sorted-map))))
+
+(defn probability-map [f base n a b]
+  "Takes a probability density function f with arbitrary support, a base, and a maximum prefix length n.
+  Returns a map from the padded prefixes (represented as doubles) to their corresponding probabilities."
+  (->> (range a b)
+       (mapcat #(->> (probability-map-0-1 (comp f (partial + %)) base n)
+                     (map (fn [[x p]] [(+ x %) p]))
+                     (into (sorted-map))))))
+\end{lstlisting}

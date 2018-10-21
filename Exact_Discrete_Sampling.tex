@@ -1,0 +1,82 @@
+\section{Exact Discrete Sampling}
+
+\subsection{Exact Bisection Sampling}
+
+Say our next challenge was to draw exact samples from the Poisson distribution with parameter $\lambda = 5$. Here's how we could do it. First, find a rational number that is close to the median. (Using rationals just makes the procedure simpler.) As figure \ref{fig:bisection_0} demonstrates, using 4.5 as our midpoint will do nicely.
+
+\pgfmathdeclarefunction{poiss}{1}{%
+	\pgfmathparse{(#1^x)*exp(-#1)/(x!)}%
+}
+
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[scale=1.3]
+    \begin{axis}[tick label style={/pgf/number format/fixed}, every axis plot post/.append style={
+      samples at = {0,...,15},
+      axis x line*=bottom,
+      axis y line*=left,
+      enlargelimits=upper}]
+      \addplot +[ycomb] {poiss(5)};
+      \draw[red, very thick] (45, 0) -- (45, 200);
+    \end{axis}
+    \end{tikzpicture}
+    \caption{Approximate bisection of the Poisson distribution with $\lambda = 5$ using 4.5 as the mid point}
+    \label{fig:bisection_0}
+\end{figure}
+
+We can then compute the probability that any sample will fall on the left side of this line by computing the leading bits of the cumulative distribution function at 4.5.
+$$F(4.5) = 0.0111000011..._2$$
+where $F$ is the distribution function of the Poisson distribution with $\lambda = 5$. Using a few of these bits together with exact Bernoulli sampling we can now determine which way to proceed with our search.
+
+For the purpose of illustration, let's assume that our first bisection led us to the right. We then rescale our probabilities by conditioning on the fact that our sample is greater than 4.5 and bisect this new probability distribution as in figure \ref{fig:bisection_1}.
+
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[scale=1.3]
+    \begin{axis}[every axis plot post/.append style={
+      samples at = {5,...,20},
+      axis x line*=bottom,
+      axis y line*=left,
+      enlargelimits=upper}]
+      \addplot +[ycomb] {poiss(5)/0.5595};
+      \draw[red, very thick] (15, 0) -- (15, 350);
+    \end{axis}
+    \end{tikzpicture}
+    \caption{Approximately bisect the Poisson distribution above 4.5 using 6.5 as the new mid point}
+    \label{fig:bisection_1}
+\end{figure}
+
+At this point the idea should be clear. Keep bisecting the remaining range until only a single integer is the sole remaining possibility. That will then be our sample. As long as we don't choose our mid points in a completely silly fashion the number of steps we'll be walking off to the right will follow an approximately geometric distribution. And as soon as we turn back around we'll terminate very soon after.
+
+Of course, none of these considerations were very particular to the Poisson distribution with $\lambda = 5$. So this method is evidently applicable to virtually any discrete distribution you could name.
+
+\subsection{Exact Discrete Inverse Sampling}
+
+Another procedure that is in many respects quite similar can be constructed from inverse sampling. That is, if $X \sim \text{U}[0,1]$, then $F^{-1}(X)$ will be distributed according to the Poisson distribution with $\lambda = 5$ (to be exact $F^{-1}$ must be defined to return the smallest $n \in \mathbb{N}$ such that $F(n) \geq X$ (we use the convention that $\mathbb{N}$ includes 0). One way to visually represent this is by labeling the unit interval as in figure \ref{fig:inverse}. Then we drop a sample $X$ onto the line, observe which interval the sample fell in, and choose the next largest corresponding $n$ as our sample.
+
+\begin{figure}[t!]
+	\centering
+	\begin{tikzpicture}[scale=0.03\textwidth]
+	\draw (0,0) -- (1,0);
+	\draw (0.0067, -0.02) -- (0.0067, 0.02);
+	\draw (0.0404, -0.02) -- (0.0404, 0.02);
+	\draw (0.1246, -0.02) node[below]{$\hdots$}
+	-- (0.1246, 0.02);
+	\draw (0.2650, -0.02) node[below]{$F(3)$}
+	-- (0.2650, 0.02);
+	\draw (0.4404, -0.02) node[below]{$F(4)$}
+	-- (0.4404, 0.02);
+	\draw (0.6159, -0.02) node[below]{$F(5)$}
+	-- (0.6159, 0.02);
+	\draw (0.7621, -0.02) node[below]{$\hdots$}
+	-- (0.7621, 0.02);
+	\draw (0.8666, -0.02) -- (0.8666, 0.02);
+	\draw (0.9319, -0.02) -- (0.9319, 0.02);
+	\draw (0.9681, -0.02) -- (0.9681, 0.02);
+	\draw (0.9863, -0.02) -- (0.9863, 0.02);
+	\end{tikzpicture}
+	\caption{The unit interval divided into sections according to the Poisson distribution function when $\lambda = 5$}
+	\label{fig:inverse}
+\end{figure}
+
+We can easily make this procedure exact by sampling the digits of $X$ one by one and computing the leading digits of $F$ for the various relevant values of $n$. Eventually we'll have $X$ completely fenced in between $F(n)$ and $F(n+1)$ for some $n$, at which point none of the remaining digits of any of the involved quantities matter, so we can return $n+1$.
