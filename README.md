@@ -1,6 +1,6 @@
-## Exact Sampling And Prefix Distributions
+# Exact Sampling And Prefix Distributions
 
-# Abstract
+## Abstract
 
 This thesis explores some new means to generate random numbers without incurring any numerical
 inaccuracies along the way. In the context of continuous distributions this leads to the discussion of
